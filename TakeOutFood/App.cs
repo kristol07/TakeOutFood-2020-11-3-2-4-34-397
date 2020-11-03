@@ -55,7 +55,7 @@
             }
 
             output += "-----------------------------------\n";
-            output += $"Total: {totalPrice - totalPromoPrice} yuan\n";
+            output += $"Total：{totalPrice - totalPromoPrice} yuan\n";
             output += "===================================";
 
             var result = output.ToString();

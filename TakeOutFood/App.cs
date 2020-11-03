@@ -25,33 +25,33 @@
 
 
             var allItems = itemRepository.FindAll();
-            var promos = salesPromotionRepository.FindAll();
-            var dictItems = BuildDict(allItems);
+            var promoRules = salesPromotionRepository.FindAll();
+            var allItemsDict = BuildAllItemsDict(allItems);
 
-            var boughtDict = GetItemsFromInput(inputs);
+            var itemsDict = BuildItemsDict(inputs);
 
             double totalPrice = 0;
 
-            foreach (var id in boughtDict.Keys)
+            foreach (var id in itemsDict.Keys)
             {
-                output += $"{dictItems[id].Name} x {boughtDict[id]} = {dictItems[id].Price * boughtDict[id]} yuan\n";
-                totalPrice += dictItems[id].Price * boughtDict[id];
+                output += $"{allItemsDict[id].Name} x {itemsDict[id]} = {allItemsDict[id].Price * itemsDict[id]} yuan\n";
+                totalPrice += allItemsDict[id].Price * itemsDict[id];
             }
 
             double totalPromoPrice = 0;
 
-            var promo = FindMostPromotedRule(promos, dictItems, boughtDict);
+            var promo = FindMostPromotedRule(promoRules, allItemsDict, itemsDict);
 
             if (promo != null)
             {
                 output += "-----------------------------------\n";
                 output += "Promotion used:\n";
-                var boughtPromoItems = promo.RelatedItems.Where(id => boughtDict.ContainsKey(id));
-                var note = $"{promo.DisplayName} ({boughtPromoItems.Select(id => dictItems[id].Name).Aggregate((a, b) => a + ", " + b)})";
-                var discount = 0.5;
-                var promoPrice = boughtPromoItems.Select(id => dictItems[id].Price * boughtDict[id] * (1 - discount)).Sum();
+                var boughtPromoItems = promo.RelatedItems.Where(id => itemsDict.ContainsKey(id));
+                var promoInfo = $"{promo.DisplayName} ({boughtPromoItems.Select(id => allItemsDict[id].Name).Aggregate((a, b) => a + ", " + b)})";
+                var discount = ReadDiscountFromPromoType(promo.Type);
+                var promoPrice = boughtPromoItems.Select(id => allItemsDict[id].Price * itemsDict[id] * (1 - discount)).Sum();
                 totalPromoPrice += promoPrice;
-                output += $"{note}, saving {promoPrice} yuan\n";
+                output += $"{promoInfo}, saving {promoPrice} yuan\n";
             }
 
             output += "-----------------------------------\n";
@@ -64,18 +64,18 @@
 
         }
 
-        public SalesPromotion FindMostPromotedRule(List<SalesPromotion> promos, Dictionary<string, Item> dictItems, Dictionary<string, int> boughtDict)
+        public SalesPromotion FindMostPromotedRule(List<SalesPromotion> promos, Dictionary<string, Item> AllItemsDict, Dictionary<string, int> itemsDict)
         {
             double totalPromoPrice = 0;
             SalesPromotion promoRule = null;
-            foreach(var promo in promos)
+            foreach (var promo in promos)
             {
-                var boughtPromoItems = promo.RelatedItems.Where(id => boughtDict.ContainsKey(id));
+                var boughtPromoItems = promo.RelatedItems.Where(id => itemsDict.ContainsKey(id));
                 if (!boughtPromoItems.Any())
                     continue;
-                var discount = 0.5;
-                var promoPrice = boughtPromoItems.Select(id => dictItems[id].Price * boughtDict[id] * (1 - discount)).Sum();
-                if(promoPrice>=totalPromoPrice)
+                var discount = ReadDiscountFromPromoType(promo.Type);
+                var promoPrice = boughtPromoItems.Select(id => AllItemsDict[id].Price * itemsDict[id] * (1 - discount)).Sum();
+                if (promoPrice >= totalPromoPrice)
                 {
                     totalPromoPrice = promoPrice;
                     promoRule = promo;
@@ -83,10 +83,14 @@
             }
 
             return promoRule;
-
         }
 
-        public Dictionary<string, Item> BuildDict(List<Item> items)
+        private double ReadDiscountFromPromoType(string type)
+        {
+            return double.Parse(type.Substring(0, 2)) * 0.01;
+        }
+
+        public Dictionary<string, Item> BuildAllItemsDict(List<Item> items)
         {
             var dict = new Dictionary<string, Item>();
             foreach (var item in items)
@@ -96,7 +100,7 @@
             return dict;
         }
 
-        public Dictionary<string, int> GetItemsFromInput(List<string> inputs)
+        public Dictionary<string, int> BuildItemsDict(List<string> inputs)
         {
             var all = new Dictionary<string, int>();
             foreach (var input in inputs)

@@ -27,13 +27,8 @@
             var allItemsDict = BuildAllItemsDict(allItems);
             var itemsDict = BuildItemsDict(inputs);
 
-            double totalPrice = 0;
-            foreach (var id in itemsDict.Keys)
-            {
-                output += $"{allItemsDict[id].Name} x {itemsDict[id]} = {allItemsDict[id].Price * itemsDict[id]} yuan\n";
-                totalPrice += allItemsDict[id].Price * itemsDict[id];
-            }
-
+            double totalPrice = CalculateTotalPrice(allItemsDict, itemsDict, ref output);
+            
             double totalPromoPrice = 0;
             var promo = FindMostPromotedRule(promoRules, allItemsDict, itemsDict);
             if (promo != null)
@@ -55,7 +50,20 @@
             return output.ToString();
         }
 
-        public SalesPromotion FindMostPromotedRule(List<SalesPromotion> promos, Dictionary<string, Item> AllItemsDict, Dictionary<string, int> itemsDict)
+        public double CalculateTotalPrice(Dictionary<string, Item> allItemsDict, Dictionary<string, int> itemsDict, ref string output)
+        {
+            double totalPrice = 0;
+
+            foreach (var id in itemsDict.Keys)
+            {
+                output += $"{allItemsDict[id].Name} x {itemsDict[id]} = {allItemsDict[id].Price * itemsDict[id]} yuan\n";
+                totalPrice += allItemsDict[id].Price * itemsDict[id];
+            }
+
+            return totalPrice;
+        }
+
+        public SalesPromotion FindMostPromotedRule(List<SalesPromotion> promos, Dictionary<string, Item> allItemsDict, Dictionary<string, int> itemsDict)
         {
             double totalPromoPrice = 0;
             SalesPromotion promoRule = null;
@@ -67,7 +75,7 @@
                     continue;
 
                 var discount = ReadDiscountFromPromoType(promo.Type);
-                var promoPrice = boughtPromoItems.Select(id => AllItemsDict[id].Price * itemsDict[id] * (1 - discount)).Sum();
+                var promoPrice = boughtPromoItems.Select(id => allItemsDict[id].Price * itemsDict[id] * (1 - discount)).Sum();
                 if (promoPrice >= totalPromoPrice)
                 {
                     totalPromoPrice = promoPrice;
@@ -91,7 +99,7 @@
             {
                 dict.Add(item.Id, item);
             }
-            
+
             return dict;
         }
 
